@@ -14,6 +14,7 @@
 		827822251D91674E002ACA85 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 827822231D91674E002ACA85 /* Main.storyboard */; };
 		827822271D91674E002ACA85 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 827822261D91674E002ACA85 /* Assets.xcassets */; };
 		8278222A1D91674E002ACA85 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 827822281D91674E002ACA85 /* LaunchScreen.storyboard */; };
+		827822321D9186F1002ACA85 /* ComposeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827822311D9186F1002ACA85 /* ComposeViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		827822261D91674E002ACA85 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		827822291D91674E002ACA85 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8278222B1D91674E002ACA85 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		827822311D9186F1002ACA85 /* ComposeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ComposeViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +63,7 @@
 				8278221A1D91674E002ACA85 /* AppDelegate.swift */,
 				8278221F1D91674E002ACA85 /* MasterViewController.swift */,
 				827822211D91674E002ACA85 /* DetailViewController.swift */,
+				827822311D9186F1002ACA85 /* ComposeViewController.swift */,
 				827822231D91674E002ACA85 /* Main.storyboard */,
 				827822261D91674E002ACA85 /* Assets.xcassets */,
 				827822281D91674E002ACA85 /* LaunchScreen.storyboard */,
@@ -141,6 +144,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				827822321D9186F1002ACA85 /* ComposeViewController.swift in Sources */,
 				8278221B1D91674E002ACA85 /* AppDelegate.swift in Sources */,
 				8278221E1D91674E002ACA85 /* HitMe.xcdatamodeld in Sources */,
 				827822201D91674E002ACA85 /* MasterViewController.swift in Sources */,
