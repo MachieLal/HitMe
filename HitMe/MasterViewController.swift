@@ -42,15 +42,19 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         self.performSegueWithIdentifier("showComposeView", sender: sender)
     }
     
-    func insertNewObject(sender: AnyObject) {
+    func insertNewObject(message: [String:AnyObject]) {
         let context = self.fetchedResultsController.managedObjectContext
         let entity = self.fetchedResultsController.fetchRequest.entity!
         let newManagedObject = NSEntityDescription.insertNewObjectForEntityForName(entity.name!, inManagedObjectContext: context)
              
         // If appropriate, configure the new managed object.
         // Normally you should use accessor methods, but using KVC here avoids the need to add a custom class to the template.
-        newManagedObject.setValue(NSDate(), forKey: "timeStamp")
-             
+        newManagedObject.setValue(message["timeStamp"] as? String, forKey: "timeStamp")
+        newManagedObject.setValue(message["toName"] as? String, forKey: "toName")
+        newManagedObject.setValue(message["fromName"] as? String, forKey: "fromName")
+        newManagedObject.setValue(message["text"] as? String, forKey: "text")
+        newManagedObject.setValue(message["flag"] as? Bool, forKey: "flag")
+
         // Save the context.
         do {
             try context.save()
@@ -119,7 +123,9 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
     }
 
     func configureCell(cell: UITableViewCell, withObject object: NSManagedObject) {
-        cell.textLabel!.text = object.valueForKey("timeStamp")!.description
+        cell.textLabel!.text = object.valueForKey("toName")!.description
+        cell.detailTextLabel!.text = object.valueForKey("text")!.description
+        
     }
 
     // MARK: - Fetched results controller
