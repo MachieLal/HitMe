@@ -20,7 +20,7 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         // Do any additional setup after loading the view, typically from a nib.
         self.navigationItem.leftBarButtonItem = self.editButtonItem()
 
-        let addButton = UIBarButtonItem(barButtonSystemItem: .Compose, target: self, action: #selector(showComposeView(_:)))
+        let addButton = UIBarButtonItem(barButtonSystemItem: .Compose, target: self, action: #selector(showComposeViewModally(_:)))
         self.navigationItem.rightBarButtonItem = addButton
         if let split = self.splitViewController {
             let controllers = split.viewControllers
@@ -35,10 +35,9 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
 
-    func showComposeView(sender: AnyObject) {
+    func showComposeViewModally(sender: AnyObject) {
         self.performSegueWithIdentifier("showComposeView", sender: sender)
     }
     
@@ -47,8 +46,6 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         let entity = self.fetchedResultsController.fetchRequest.entity!
         let newManagedObject = NSEntityDescription.insertNewObjectForEntityForName(entity.name!, inManagedObjectContext: context)
              
-        // If appropriate, configure the new managed object.
-        // Normally you should use accessor methods, but using KVC here avoids the need to add a custom class to the template.
         newManagedObject.setValue(message["timeStamp"] as? String, forKey: "timeStamp")
         newManagedObject.setValue(message["toName"] as? String, forKey: "toName")
         newManagedObject.setValue(message["fromName"] as? String, forKey: "fromName")
@@ -72,8 +69,28 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         if segue.identifier == "showDetail" {
             if let indexPath = self.tableView.indexPathForSelectedRow {
             let object = self.fetchedResultsController.objectAtIndexPath(indexPath)
+                
+                let toName = object.valueForKey("toName")!.description
+                let fromName = object.valueForKey("fromName")!.description
+                let fetchRequest = NSFetchRequest(entityName: "Message")
+                fetchRequest.fetchBatchSize = 20
+                fetchRequest.predicate = NSPredicate(format: "toName == %@ and fromName == %@", argumentArray: [toName, fromName])
+                let sortedDate = NSSortDescriptor(key: "timeStamp", ascending: true)
+                fetchRequest.sortDescriptors = [sortedDate]
+                fetchRequest.returnsObjectsAsFaults = false;
+
+                var objects:AnyObject?
+                
+                do {
+                    let results = try self.managedObjectContext!.executeFetchRequest(fetchRequest)
+                    objects = results as! [NSManagedObject]
+                } catch let error as NSError {
+                    print("Could not fetch \(error), \(error.userInfo)")
+                }
+
                 let controller = (segue.destinationViewController as! UINavigationController).topViewController as! DetailViewController
-                controller.detailItem = object
+                controller.detailItem = objects
+                controller.title = toName
                 controller.navigationItem.leftBarButtonItem = self.splitViewController?.displayModeButtonItem()
                 controller.navigationItem.leftItemsSupplementBackButton = true
             }
@@ -142,7 +159,8 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         
         // Set the batch size to a suitable number.
         fetchRequest.fetchBatchSize = 20
-        
+        fetchRequest.predicate = NSPredicate(format: "flag == %@", argumentArray: [false])
+
         // Edit the sort key as appropriate.
         let sortDescriptor = NSSortDescriptor(key: "timeStamp", ascending: false)
         
