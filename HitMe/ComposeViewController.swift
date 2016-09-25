@@ -22,41 +22,43 @@ class ComposeViewController: UIViewController {
     //MARK: - Button Actions
     @IBAction func sendMessage(sender: UIButton) {
 
-        let toName = sendToField.text ?? "Tarun"
-        let fromName = "Arun"
-        // check for empty messages
         guard let bodytext = messageBodyField!.text where !messageBodyField!.text.isEmpty else {
             return
         }
         
-        // Trigger a local notification for auto reply
+        let toNames = sendToField.text ?? "Tarun"
+        let fromName = "Arun"
+        // check for empty messages
+        let toNamesArray = NSMutableString(string:toNames).componentsSeparatedByString(",")
         let dateFormat = NSDateFormatter()
         dateFormat.dateFormat = "dd/MM/yyyy HH:mm:ss a"
         let date = dateFormat.stringFromDate(NSDate())
-        let replyTime = NSDate().dateByAddingTimeInterval(5)
-        let appDelegate = UIApplication.sharedApplication().delegate as? AppDelegate
-        if let notification = appDelegate?.localNotification
-        {
-            notification.alertTitle = toName
-            notification.alertBody = bodytext
-            notification.soundName = "Default"
-            notification.fireDate = replyTime
-            notification.repeatInterval = NSCalendarUnit(rawValue: 0)
-            notification.timeZone = NSTimeZone.defaultTimeZone()
-            notification.userInfo = ["body": String(bodytext.characters.reverse()), "toName":toName, "fromName":fromName, "flag" : false]
-            UIApplication.sharedApplication().scheduleLocalNotification(notification)
+
+        for toName in toNamesArray {
+            // Trigger a local notification for auto reply
+                        let replyTime = NSDate().dateByAddingTimeInterval(5)
+            let appDelegate = UIApplication.sharedApplication().delegate as? AppDelegate
+            if let notification = appDelegate?.localNotification
+            {
+                notification.alertTitle = toName
+                notification.alertBody = bodytext
+                notification.soundName = "Default"
+                notification.fireDate = replyTime
+                notification.repeatInterval = NSCalendarUnit(rawValue: 0)
+                notification.timeZone = NSTimeZone.defaultTimeZone()
+                notification.userInfo = ["body": String(bodytext.characters.reverse()), "toName":toName, "fromName":fromName, "isSent" : false]
+                UIApplication.sharedApplication().scheduleLocalNotification(notification)
+            }
+            
+            let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "isSent" : true]
+            
+            //Persistence - storage
+            appDelegate!.controller.insertNewObject(messageData)
         }
         
-        
-        let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "flag" : true]
-        
-        textArray.addObject(messageData)
-        
+        textArray.addObject(["fromName":fromName, "text":bodytext, "timeStamp": date])
         tableView.reloadData()
-        
-        //Persistence
-        appDelegate!.controller.insertNewObject(messageData)
-
+        messageBodyField.text = ""
     }
     
     @IBAction func cancel(sender: UIButton) {
@@ -82,6 +84,9 @@ class ComposeViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    func updateTableView(){
+        
+    }
 
     /*
     // MARK: - Navigation
@@ -149,18 +154,8 @@ extension ComposeViewController: UITableViewDataSource {
     {
         if let cell = tableView.dequeueReusableCellWithIdentifier("messageData") as? CustomTableCell {
             let msgObj = textArray.objectAtIndex(indexPath.row) as! [String:AnyObject]
-//            if (((msgObj["flag"] as? Bool)) != true) {
-//                cell.toLabel.hidden = false
-//                cell.fromLabel.hidden = true
-//
-//            }
-//            else{
-//                cell.toLabel.hidden = true
-//                cell.fromLabel.hidden = false
-//
-//            }
+
             cell.date!.text = msgObj["timeStamp"] as? String
-//            cell.toLabel!.text = msgObj["toName"] as? String
             cell.fromLabel!.text = msgObj["fromName"] as? String
             cell.messageBody!.text = msgObj["text"] as? String
             

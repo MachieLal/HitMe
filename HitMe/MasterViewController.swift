@@ -9,12 +9,13 @@
 import UIKit
 import CoreData
 
-class MasterViewController: UITableViewController, NSFetchedResultsControllerDelegate {
+class MasterViewController: UITableViewController {
 
     var detailViewController: DetailViewController? = nil
     var managedObjectContext: NSManagedObjectContext? = nil
 
-
+    var messagesArray = NSMutableArray()// data model object
+ 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -31,6 +32,9 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
     override func viewWillAppear(animated: Bool) {
         self.clearsSelectionOnViewWillAppear = self.splitViewController!.collapsed
         super.viewWillAppear(animated)
+        autoreleasepool{updateTableView()}
+        
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -42,24 +46,61 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
     }
     
     func insertNewObject(message: [String:AnyObject]) {
-        let context = self.fetchedResultsController.managedObjectContext
-        let entity = self.fetchedResultsController.fetchRequest.entity!
-        let newManagedObject = NSEntityDescription.insertNewObjectForEntityForName(entity.name!, inManagedObjectContext: context)
+        let context = self.managedObjectContext!
+        let newManagedObject = NSEntityDescription.insertNewObjectForEntityForName("Message", inManagedObjectContext: context)
              
         newManagedObject.setValue(message["timeStamp"] as? String, forKey: "timeStamp")
         newManagedObject.setValue(message["toName"] as? String, forKey: "toName")
         newManagedObject.setValue(message["fromName"] as? String, forKey: "fromName")
         newManagedObject.setValue(message["text"] as? String, forKey: "text")
-        newManagedObject.setValue(message["flag"] as? Bool, forKey: "flag")
+        newManagedObject.setValue(message["isSent"] as? Bool, forKey: "isSent")
 
         // Save the context.
         do {
             try context.save()
-        } catch {
-            // Replace this implementation with code to handle the error appropriately.
-            // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-            //print("Unresolved error \(error), \(error.userInfo)")
+        } catch let error as NSError {
+            print("Unresolved error \(error), \(error.userInfo)")
             abort()
+        }
+    }
+    
+    func updateTableView() {
+        let fetchRequest = NSFetchRequest(entityName: "Message")
+        fetchRequest.fetchBatchSize = 20
+        fetchRequest.predicate = NSPredicate(format: "isSent == %@", argumentArray: [false])
+        let sortedDate = NSSortDescriptor(key: "timeStamp", ascending: false)
+        let sortedByName = NSSortDescriptor(key: "toName", ascending: true)
+
+        fetchRequest.sortDescriptors = [sortedDate,sortedByName]
+        fetchRequest.returnsObjectsAsFaults = false;
+        
+        var results : [AnyObject]? = nil
+        // Fetch Request
+        do {
+            results = try self.managedObjectContext!.executeFetchRequest(fetchRequest)
+
+        } catch let error as NSError {
+            print("Could not fetch \(error), \(error.userInfo)")
+        }
+        
+        messagesArray.removeAllObjects()
+        if let objects = results as? [NSManagedObject] {
+            if objects.count > 0 {
+                var tempNameHolder = NSString(string: objects.first!.valueForKey("toName")!.description)
+                let mutableObjectsArray = NSMutableArray(array: objects)
+                while mutableObjectsArray.count != 0 {
+                    tempNameHolder = NSString(string: mutableObjectsArray.firstObject!.valueForKey("toName")!.description)
+
+                    guard let filteredArray = mutableObjectsArray.filteredArrayUsingPredicate(NSPredicate.init(format: "toName == %@", argumentArray: [tempNameHolder])) as [AnyObject]? where filteredArray.count > 0 else {
+                        break
+                    }
+                    messagesArray.addObject(filteredArray.first!)
+                    mutableObjectsArray.removeObjectsInArray(filteredArray)
+                }
+                
+//                print("messages:::\(messagesArray)")
+                tableView.reloadData()
+            }
         }
     }
 
@@ -68,7 +109,8 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if segue.identifier == "showDetail" {
             if let indexPath = self.tableView.indexPathForSelectedRow {
-            let object = self.fetchedResultsController.objectAtIndexPath(indexPath)
+                
+                let object = self.messagesArray[indexPath.row]
                 
                 let toName = object.valueForKey("toName")!.description
                 let fromName = object.valueForKey("fromName")!.description
@@ -80,7 +122,7 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
                 fetchRequest.returnsObjectsAsFaults = false;
 
                 var objects:AnyObject?
-                
+                // Fetch Request
                 do {
                     let results = try self.managedObjectContext!.executeFetchRequest(fetchRequest)
                     objects = results as! [NSManagedObject]
@@ -95,25 +137,21 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
                 controller.navigationItem.leftItemsSupplementBackButton = true
             }
         }
-        if segue.identifier == "showComposeView" {
-            
-        }
+//        if segue.identifier == "showComposeView" {
+//            
+//        }
     }
 
     // MARK: - Table View
 
-    override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return self.fetchedResultsController.sections?.count ?? 0
-    }
-
     override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let sectionInfo = self.fetchedResultsController.sections![section]
-        return sectionInfo.numberOfObjects
+        
+        return messagesArray.count
     }
 
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath)
-        let object = self.fetchedResultsController.objectAtIndexPath(indexPath) as! NSManagedObject
+        let object = messagesArray[indexPath.row] as! NSManagedObject
         self.configureCell(cell, withObject: object)
         return cell
     }
@@ -125,106 +163,28 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
 
     override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
         if editingStyle == .Delete {
-            let context = self.fetchedResultsController.managedObjectContext
-            context.deleteObject(self.fetchedResultsController.objectAtIndexPath(indexPath) as! NSManagedObject)
-                
+
+            let fetchRequest = NSFetchRequest(entityName: "Message")
+            fetchRequest.fetchBatchSize = 20
+            fetchRequest.predicate = NSPredicate(format: "toName == %@", argumentArray: [messagesArray[indexPath.row].valueForKey("toName")!.description])
+            
+            let batchRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+            batchRequest.resultType = .ResultTypeCount
+            // Batch Delete Request
             do {
-                try context.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                //print("Unresolved error \(error), \(error.userInfo)")
-                abort()
+                let results = try self.managedObjectContext!.executeRequest(_:batchRequest)
+                print("batchRequest result \(results)")
+            } catch let error as NSError {
+                print("Could not fetch \(error), \(error.userInfo)")
             }
+            
+            messagesArray.removeObjectAtIndex(indexPath.row)
+            tableView.reloadData()
         }
     }
 
     func configureCell(cell: UITableViewCell, withObject object: NSManagedObject) {
         cell.textLabel!.text = object.valueForKey("toName")!.description
         cell.detailTextLabel!.text = object.valueForKey("text")!.description
-        
     }
-
-    // MARK: - Fetched results controller
-
-    var fetchedResultsController: NSFetchedResultsController {
-        if _fetchedResultsController != nil {
-            return _fetchedResultsController!
-        }
-        
-        let fetchRequest = NSFetchRequest()
-        // Edit the entity name as appropriate.
-        let entity = NSEntityDescription.entityForName("Message", inManagedObjectContext: self.managedObjectContext!)
-        fetchRequest.entity = entity
-        
-        // Set the batch size to a suitable number.
-        fetchRequest.fetchBatchSize = 20
-        fetchRequest.predicate = NSPredicate(format: "flag == %@", argumentArray: [false])
-
-        // Edit the sort key as appropriate.
-        let sortDescriptor = NSSortDescriptor(key: "timeStamp", ascending: false)
-        
-        fetchRequest.sortDescriptors = [sortDescriptor]
-        
-        // Edit the section name key path and cache name if appropriate.
-        // nil for section name key path means "no sections".
-        let aFetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.managedObjectContext!, sectionNameKeyPath: nil, cacheName: "Master")
-        aFetchedResultsController.delegate = self
-        _fetchedResultsController = aFetchedResultsController
-        
-        do {
-            try _fetchedResultsController!.performFetch()
-        } catch {
-             // Replace this implementation with code to handle the error appropriately.
-             // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development. 
-             //print("Unresolved error \(error), \(error.userInfo)")
-             abort()
-        }
-        
-        return _fetchedResultsController!
-    }    
-    var _fetchedResultsController: NSFetchedResultsController? = nil
-
-    func controllerWillChangeContent(controller: NSFetchedResultsController) {
-        self.tableView.beginUpdates()
-    }
-
-    func controller(controller: NSFetchedResultsController, didChangeSection sectionInfo: NSFetchedResultsSectionInfo, atIndex sectionIndex: Int, forChangeType type: NSFetchedResultsChangeType) {
-        switch type {
-            case .Insert:
-                self.tableView.insertSections(NSIndexSet(index: sectionIndex), withRowAnimation: .Fade)
-            case .Delete:
-                self.tableView.deleteSections(NSIndexSet(index: sectionIndex), withRowAnimation: .Fade)
-            default:
-                return
-        }
-    }
-
-    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
-        switch type {
-            case .Insert:
-                tableView.insertRowsAtIndexPaths([newIndexPath!], withRowAnimation: .Fade)
-            case .Delete:
-                tableView.deleteRowsAtIndexPaths([indexPath!], withRowAnimation: .Fade)
-            case .Update:
-                self.configureCell(tableView.cellForRowAtIndexPath(indexPath!)!, withObject: anObject as! NSManagedObject)
-            case .Move:
-                tableView.moveRowAtIndexPath(indexPath!, toIndexPath: newIndexPath!)
-        }
-    }
-
-    func controllerDidChangeContent(controller: NSFetchedResultsController) {
-        self.tableView.endUpdates()
-    }
-
-    /*
-     // Implementing the above methods to update the table view in response to individual changes may have performance implications if a large number of changes are made simultaneously. If this proves to be an issue, you can instead just implement controllerDidChangeContent: which notifies the delegate that all section and object changes have been processed.
-     
-     func controllerDidChangeContent(controller: NSFetchedResultsController) {
-         // In the simplest, most efficient, case, reload the table view.
-         self.tableView.reloadData()
-     }
-     */
-
 }
-

@@ -28,11 +28,11 @@ class DetailViewController: UIViewController {
                 let toName = item.valueForKey("toName")!.description
                 let fromName = item.valueForKey("fromName")!.description
                 let bodytext = item.valueForKey("text")!.description
-                let flag = item.valueForKey("flag")!.description
+                let isSent = item.valueForKey("isSent")!.description
 //                print("flagggggg \(flag)")
                 let date = item.valueForKey("timeStamp")!.description
 
-                let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "flag" : flag]
+                let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "isSent" : isSent]
                 
                 textArray.addObject(messageData)
             }
@@ -68,12 +68,12 @@ class DetailViewController: UIViewController {
             notification.fireDate = replyTime
             notification.repeatInterval = NSCalendarUnit(rawValue: 0)
             notification.timeZone = NSTimeZone.defaultTimeZone()
-            notification.userInfo = ["body": String(bodytext.characters.reverse()), "toName":toName, "fromName":fromName, "flag" : false]
+            notification.userInfo = ["body": String(bodytext.characters.reverse()), "toName":toName, "fromName":fromName, "isSent" : false]
             UIApplication.sharedApplication().scheduleLocalNotification(notification)
         }
         
         
-        let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "flag" : true]
+        let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "isSent" : true]
         
         textArray.addObject(messageData)
         
@@ -83,22 +83,30 @@ class DetailViewController: UIViewController {
         appDelegate!.controller.insertNewObject(messageData)
         
     }
+    
+    //MARK: - Button Actions
+    @IBAction func cancelMessage(sender: UIButton) {
+        messageBodyField.resignFirstResponder()
+        messageBodyField.text = ""
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        messageBodyField.inputAccessoryView = accessoryView
+//        messageBodyField.inputAccessoryView = accessoryView
 //        textArray = NSMutableArray()
-        // Do any additional setup after loading the view, typically from a nib.
 //        tableView.reloadData()
     }
-
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        messageBodyField.becomeFirstResponder()
+        messageBodyField.keyboardType = .NamePhonePad
+        
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
-}
-
-extension DetailViewController: UITableViewDelegate {
 }
 
 extension DetailViewController: UITableViewDataSource {
@@ -113,17 +121,16 @@ extension DetailViewController: UITableViewDataSource {
     {
         if let cell = tableView.dequeueReusableCellWithIdentifier("messageData") as? CustomTableCell {
             let msgObj = textArray.objectAtIndex(indexPath.row) as! [String:AnyObject]
-            let boolType = NSString(string:msgObj["flag"]! as! String).boolValue
+            let boolType = NSString(string:msgObj["isSent"]! as! String).boolValue
             if (boolType) {
-                cell.toLabel.hidden = false
-                cell.fromLabel.hidden = true
-                cell.messageBody!.backgroundColor = UIColor.orangeColor()
-            }
-            else{
                 cell.toLabel.hidden = true
                 cell.fromLabel.hidden = false
                 cell.messageBody!.backgroundColor = UIColor.yellowColor()
-
+            }
+            else{
+                cell.toLabel.hidden = false
+                cell.fromLabel.hidden = true
+                cell.messageBody!.backgroundColor = UIColor.orangeColor()
             }
             cell.date!.text = msgObj["timeStamp"] as? String
             cell.toLabel!.text = msgObj["toName"] as? String

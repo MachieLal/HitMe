@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G1004" minimumToolsVersion="Automatic">
     <entity name="Message" syncable="YES">
-        <attribute name="flag" optional="YES" attributeType="Boolean" syncable="YES"/>
         <attribute name="fromName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="isSent" optional="YES" attributeType="Boolean" syncable="YES"/>
         <attribute name="text" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="timeStamp" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="toName" optional="YES" attributeType="String" syncable="YES"/>
