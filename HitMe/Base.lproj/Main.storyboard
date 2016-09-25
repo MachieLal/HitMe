@@ -211,10 +211,10 @@
                                     <constraint firstAttribute="height" constant="483" id="It3-ee-sM1"/>
                                 </constraints>
                                 <prototypes>
-                                    <tableViewCell clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" selectionStyle="default" indentationWidth="10" reuseIdentifier="messageData" rowHeight="96" id="QPW-91-3Ts" customClass="CustomTableCell" customModule="HitMe" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="2" width="600" height="96"/>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleAspectFit" selectionStyle="default" indentationWidth="10" reuseIdentifier="messageData" rowHeight="96" id="QPW-91-3Ts" customClass="CustomTableCell" customModule="HitMe" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="66" width="600" height="96"/>
                                         <autoresizingMask key="autoresizingMask"/>
-                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" tableViewCell="QPW-91-3Ts" id="VLj-Ko-Ndc">
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" contentMode="scaleAspectFit" tableViewCell="QPW-91-3Ts" id="VLj-Ko-Ndc">
                                             <rect key="frame" x="0.0" y="0.0" width="600" height="95"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>

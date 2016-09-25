@@ -12,6 +12,8 @@ import CoreData
 class DetailViewController: UIViewController {
 
     var textArray = NSMutableArray()
+    
+    let appDelegate = UIApplication.sharedApplication().delegate as? AppDelegate
 
     var detailItem: AnyObject? {
         didSet {
@@ -20,6 +22,16 @@ class DetailViewController: UIViewController {
         }
     }
 
+    func scrollToBottom () {
+        var yOffset : CGFloat = 0;
+    
+        if tableView.contentSize.height > tableView.bounds.size.height {
+            yOffset = self.tableView.contentSize.height - self.tableView.bounds.size.height;
+        }
+        
+        tableView.setContentOffset(_:CGPointMake(0, yOffset), animated: true)
+    }
+    
     func configureView() {
         // Update the user interface for the detail item.
         if let objectsArray = self.detailItem as? [NSManagedObject] {
@@ -32,15 +44,42 @@ class DetailViewController: UIViewController {
 //                print("flagggggg \(flag)")
                 let date = item.valueForKey("timeStamp")!.description
 
-                let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "isSent" : isSent]
+                let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "isSent" : NSString(string: isSent).boolValue]
                 
                 textArray.addObject(messageData)
             }
         }
     }
     
+    func updateView(notification: NSNotification) {
+        if let userInfo = notification.userInfo as! [String : AnyObject]? {
+            if let msgObj = userInfo ["messageData"] as! [String : AnyObject]? {
+                
+                guard let toName = msgObj["toName"] as? String where NSString(string: toName).isEqualToString(self.title!) else {
+                return
+                }
+                let fromName = msgObj["fromName"] as? String
+                let text = msgObj["text"] as? String
+                let isSent = msgObj["isSent"] as? Bool
+                let date = msgObj["timeStamp"] as? String
+
+
+                let messageData : [String:AnyObject] = ["fromName":fromName!, "text":text!, "toName":toName, "timeStamp": date!, "isSent" : isSent!]
+                
+                textArray.addObject(messageData)
+                tableView.reloadData()
+                scrollToBottom() //Working
+            }
+        }
+    }
+
+    
     //MARK: - IBOutlets
-    @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var tableView: UITableView! {
+        didSet {
+//            scrollToBottom() Not Working
+        }
+    }
     @IBOutlet var accessoryView: UIStackView!
     @IBOutlet var messageBodyField: UITextView!
     
@@ -59,7 +98,6 @@ class DetailViewController: UIViewController {
         dateFormat.dateFormat = "dd/MM/yyyy HH:mm:ss a"
         let date = dateFormat.stringFromDate(NSDate())
         let replyTime = NSDate().dateByAddingTimeInterval(5)
-        let appDelegate = UIApplication.sharedApplication().delegate as? AppDelegate
         if let notification = appDelegate?.localNotification
         {
             notification.alertTitle = toName
@@ -74,14 +112,14 @@ class DetailViewController: UIViewController {
         
         
         let messageData : [String:AnyObject] = ["fromName":fromName, "text":bodytext, "toName":toName, "timeStamp": date, "isSent" : true]
+        //Persistence
+        appDelegate!.controller.insertNewObject(messageData)
         
         textArray.addObject(messageData)
         
         tableView.reloadData()
         
-        //Persistence
-        appDelegate!.controller.insertNewObject(messageData)
-        
+        scrollToBottom() // Working
     }
     
     //MARK: - Button Actions
@@ -92,15 +130,25 @@ class DetailViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-//        messageBodyField.inputAccessoryView = accessoryView
-//        textArray = NSMutableArray()
-//        tableView.reloadData()
+        messageBodyField.keyboardType = .Default
+//        scrollToBottom() Not Working
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(updateView(_:)), name: "UpdateDetailViewNotification", object: appDelegate)
     }
     
+    deinit {
+        NSNotificationCenter.defaultCenter().removeObserver(self, name: "UpdateDetailViewNotification", object: appDelegate)
+    }
+
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         messageBodyField.becomeFirstResponder()
-        messageBodyField.keyboardType = .NamePhonePad
+//      scrollToBottom() Not Working
+        
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(animated)
+//        scrollToBottom() // Working
         
     }
     
@@ -121,8 +169,8 @@ extension DetailViewController: UITableViewDataSource {
     {
         if let cell = tableView.dequeueReusableCellWithIdentifier("messageData") as? CustomTableCell {
             let msgObj = textArray.objectAtIndex(indexPath.row) as! [String:AnyObject]
-            let boolType = NSString(string:msgObj["isSent"]! as! String).boolValue
-            if (boolType) {
+            let boolType = msgObj["isSent"] as! NSNumber
+            if (boolType.boolValue) {
                 cell.toLabel.hidden = true
                 cell.fromLabel.hidden = false
                 cell.messageBody!.backgroundColor = UIColor.yellowColor()
@@ -144,9 +192,27 @@ extension DetailViewController: UITableViewDataSource {
             return cell
             
         }
-        tableView.scrollToRowAtIndexPath(indexPath, atScrollPosition: .Top, animated: true)
         return UITableViewCell();
     }
+    
+    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+        // Return false if you do not want the specified item to be editable.
+        return true
+    }
+    
+    func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        if editingStyle == .Delete {
+            let msgObj = textArray.objectAtIndex(indexPath.row) as! [String:AnyObject]
+            let fetchRequest = NSFetchRequest(entityName: "Message")
+            fetchRequest.predicate = NSPredicate(format: "toName == %@ and fromName == %@ and timeStamp == %@ and text == %@ and isSent == %@", argumentArray: [msgObj["toName"]!,msgObj["fromName"]!,msgObj["timeStamp"]!,msgObj["text"]!,(msgObj["isSent"]?.boolValue)!])
+            
+            appDelegate!.controller.deleteObjectForFetchRequest(fetchRequest)
+            
+            textArray.removeObjectAtIndex(indexPath.row)
+            tableView.reloadData()
+        }
+    }
+
 }
 
 

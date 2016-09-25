@@ -29,6 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
         controller.managedObjectContext = self.managedObjectContext
         return true
     }
+    
     // MARK: Register for push
     func registerForLocalNotifications(application: UIApplication) {
         let viewAction = UIMutableUserNotificationAction()
@@ -74,7 +75,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
         
         
         controller.insertNewObject(messageData)
-
+        
+        NSNotificationCenter.defaultCenter().postNotificationName("UpdateDetailViewNotification", object: self, userInfo:["messageData": messageData])
         
 
     }

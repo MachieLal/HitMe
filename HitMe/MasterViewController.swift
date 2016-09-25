@@ -64,6 +64,18 @@ class MasterViewController: UITableViewController {
         }
     }
     
+    func deleteObjectForFetchRequest(fetchRequest: NSFetchRequest) {
+        let batchRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        batchRequest.resultType = .ResultTypeCount
+        // Batch Delete Request
+        do {
+            let results = try self.managedObjectContext!.executeRequest(_:batchRequest)
+            print("batchRequest result \(results)")
+        } catch let error as NSError {
+            print("Could not fetch \(error), \(error.userInfo)")
+        }
+    }
+    
     func updateTableView() {
         let fetchRequest = NSFetchRequest(entityName: "Message")
         fetchRequest.fetchBatchSize = 20
@@ -168,15 +180,7 @@ class MasterViewController: UITableViewController {
             fetchRequest.fetchBatchSize = 20
             fetchRequest.predicate = NSPredicate(format: "toName == %@", argumentArray: [messagesArray[indexPath.row].valueForKey("toName")!.description])
             
-            let batchRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-            batchRequest.resultType = .ResultTypeCount
-            // Batch Delete Request
-            do {
-                let results = try self.managedObjectContext!.executeRequest(_:batchRequest)
-                print("batchRequest result \(results)")
-            } catch let error as NSError {
-                print("Could not fetch \(error), \(error.userInfo)")
-            }
+            deleteObjectForFetchRequest(fetchRequest)
             
             messagesArray.removeObjectAtIndex(indexPath.row)
             tableView.reloadData()

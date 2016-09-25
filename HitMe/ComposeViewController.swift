@@ -19,6 +19,16 @@ class ComposeViewController: UIViewController {
     @IBOutlet weak var sendToField: UITextField!
     @IBOutlet var messageBodyField: UITextView!
     
+    func scrollToBottom () {
+        var yOffset : CGFloat = 0;
+        
+        if tableView.contentSize.height > tableView.bounds.size.height {
+            yOffset = self.tableView.contentSize.height - self.tableView.bounds.size.height;
+        }
+        
+        tableView.setContentOffset(_:CGPointMake(0, yOffset), animated: true)
+    }
+    
     //MARK: - Button Actions
     @IBAction func sendMessage(sender: UIButton) {
 
@@ -59,6 +69,7 @@ class ComposeViewController: UIViewController {
         textArray.addObject(["fromName":fromName, "text":bodytext, "timeStamp": date])
         tableView.reloadData()
         messageBodyField.text = ""
+        scrollToBottom()
     }
     
     @IBAction func cancel(sender: UIButton) {
@@ -66,14 +77,11 @@ class ComposeViewController: UIViewController {
        
     }
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         sendToField.delegate = self
         sendToField.inputAccessoryView = accessoryView
-        sendToField.keyboardType = .NamePhonePad
         messageBodyField.keyboardType = .Default
-        sendToField.becomeFirstResponder()
 
         
         // Do any additional setup after loading the view.
@@ -84,10 +92,13 @@ class ComposeViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    func updateTableView(){
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        sendToField.becomeFirstResponder()
+        sendToField.keyboardType = .Default
+        scrollToBottom()
         
     }
-
     /*
     // MARK: - Navigation
 
@@ -140,8 +151,6 @@ extension ComposeViewController: UITextFieldDelegate {
     
 }
 
-extension ComposeViewController: UITableViewDelegate {
-}
 
 extension ComposeViewController: UITableViewDataSource {
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int
@@ -166,11 +175,8 @@ extension ComposeViewController: UITableViewDataSource {
             return cell
 
         }
-        tableView.scrollToRowAtIndexPath(indexPath, atScrollPosition: .Top, animated: true)
         return UITableViewCell();
     }
-
     
-
 }
 
